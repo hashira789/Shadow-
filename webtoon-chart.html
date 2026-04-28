@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebtoonChart - تتبع المانهوا</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080b12;
+      --surface: #0f1422;
+      --surface2: #1a1f2e;
+      --border: #1e2535;
+      --border2: #334155;
+      --accent: #7c3aed;
+      --accent-light: #a855f7;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(180deg, #0f1422 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner { max-width: 1100px; margin: 0 auto; }
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 0 10px;
+      flex-wrap: wrap;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .logo-emoji { font-size: 28px; }
+    .logo-title { font-size: 18px; font-weight: 900; color: var(--accent-light); line-height: 1; }
+    .logo-sub { font-size: 10px; color: var(--text-dim); }
+
+    .search-row { flex: 1; display: flex; gap: 8px; min-width: 200px; }
+    .search-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 8px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Cairo', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 18px;
+      font-size: 14px;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .search-btn:hover { background: var(--accent-light); }
+
+    /* TABS */
+    .tabs { display: flex; gap: 4px; }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { color: var(--accent-light); border-bottom-color: var(--accent-light); }
+    .tab-badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 20px;
+      padding: 1px 7px;
+      font-size: 11px;
+      margin-right: 6px;
+    }
+
+    /* CONTENT */
+    .content { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+    /* GRID */
+    .manga-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+    }
+
+    /* CARD */
+    .manga-card {
+      background: transparent;
+      border: 1px solid #ffffff11;
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .manga-card:hover {
+      background: var(--surface2);
+      border-color: #7c3aed55;
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px #7c3aed22;
+    }
+
+    .card-cover {
+      position: relative;
+      padding-bottom: 140%;
+      background: #0d1117;
+      flex-shrink: 0;
+    }
+    .card-cover img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .card-cover-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      background: var(--surface2);
+    }
+    .pub-status-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: #00000099;
+      color: #fff;
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-size: 10px;
+    }
+    .lib-status-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+    }
+
+    .card-info { padding: 12px 12px 10px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .card-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* STATUS BADGE */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      border: 1px solid;
+    }
+
+    /* SELECT */
+    .status-select {
+      background: #0d1117;
+      color: #cbd5e1;
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-family: 'Cairo', sans-serif;
+      cursor: pointer;
+      width: 100%;
+      margin-top: auto;
+    }
+    .status-select option { background: #1e2535; }
+
+    /* LOADING / EMPTY */
+    .center-msg {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+    .center-msg .icon { font-size: 48px; margin-bottom: 12px; }
+
+    /* PAGINATION */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 32px;
+    }
+    .page-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 20px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .page-btn:hover { background: var(--accent-light); }
+    .page-btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: default; }
+    .page-label { color: var(--text-dim); font-size: 13px; }
+
+    /* STATS */
+    .stats-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .stat-card {
+      border-radius: 10px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid;
+    }
+    .stat-num { font-weight: 700; font-size: 18px; line-height: 1; }
+    .stat-label { color: var(--text-muted); font-size: 11px; }
+
+    /* FILTER ROW */
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .filter-btn {
+      border-radius: 20px;
+      padding: 5px 14px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: 13px;
+      border: 1px solid var(--border2);
+      background: var(--surface2);
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .filter-btn.active { color: #fff; }
+
+    /* LIBRARY LIST ITEM */
+    .lib-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .lib-item:hover { border-color: #7c3aed44; }
+    .lib-thumb {
+      width: 48px;
+      height: 64px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface2);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .lib-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .lib-info { flex: 1; min-width: 0; }
+    .lib-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .lib-select {
+      background: var(--surface2);
+      color: #cbd5e1;
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-family: 'Cairo', sans-serif;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .lib-select option { background: #1e2535; }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface2);
+      border: 1px solid #7c3aed44;
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      z-index: 999;
+      box-shadow: 0 8px 32px #00000088;
+      animation: fadeUp 0.3s ease;
+      display: none;
+    }
+    .toast.show { display: block; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* SEARCH RESULT INFO */
+    .search-info { margin-bottom: 16px; color: var(--text-muted); font-size: 13px; }
+    .search-info strong { color: var(--accent-light); }
+    .clear-btn {
+      background: none; border: none; color: #ef4444;
+      cursor: pointer; font-size: 12px; margin-right: 8px;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    @media (max-width: 600px) {
+      .manga-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+      .search-row { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="logo">
+        <span class="logo-emoji">🌸</span>
+        <div>
+          <div class="logo-title">WebtoonChart</div>
+          <div class="logo-sub">تتبع المانهوا</div>
+        </div>
+      </div>
+      <div class="search-row" id="searchRow">
+        <input class="search-input" id="searchInput" placeholder="ابحث عن مانهوا..." />
+        <button class="search-btn" onclick="doSearch()">🔍 بحث</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tab0" onclick="switchTab(0)">اكتشف</button>
+      <button class="tab-btn" id="tab1" onclick="switchTab(1)">مكتبتي <span class="tab-badge" id="libCount" style="display:none">0</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+  <!-- DISCOVER -->
+  <div id="discoverPanel">
+    <div class="search-info" id="searchInfo" style="display:none"></div>
+    <div id="mangaGrid" class="manga-grid"></div>
+    <div class="center-msg" id="loadingMsg">
+      <div class="icon">⏳</div>
+      جاري التحميل...
+    </div>
+    <div class="center-msg" id="emptyMsg" style="display:none">
+      <div class="icon">😔</div>
+      لا توجد نتائج
+    </div>
+    <div class="pagination" id="pagination" style="display:none">
+      <button class="page-btn" id="prevBtn" onclick="changePage(-1)">السابق</button>
+      <span class="page-label" id="pageLabel">صفحة 1</span>
+      <button class="page-btn" id="nextBtn" onclick="changePage(1)">التالي</button>
+    </div>
+  </div>
+
+  <!-- LIBRARY -->
+  <div id="libraryPanel" style="display:none">
+    <div class="stats-row" id="statsRow"></div>
+    <div class="filter-row" id="filterRow"></div>
+    <div id="libList"></div>
+    <div class="center-msg" id="libEmpty" style="display:none">
+      <div class="icon">📚</div>
+      <div style="font-size:18px;font-weight:700;color:#94a3b8;margin-bottom:8px">مكتبتك فارغة</div>
+      <div>اذهب لتبويب "اكتشف" وأضف مانهوا لمكتبتك مجاناً!</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const STATUS_CONFIG = {
+  reading:   { label: "أقرأه",      color: "#22c55e", icon: "📖" },
+  planning:  { label: "أخطط له",    color: "#3b82f6", icon: "📋" },
+  completed: { label: "مكتمل",      color: "#a855f7", icon: "✅" },
+  paused:    { label: "متوقف",      color: "#f59e0b", icon: "⏸️" },
+  dropped:   { label: "تخليت عنه",  color: "#ef4444", icon: "🗑️" },
+};
+
+const PUB_STATUS = { ongoing:"مستمر", completed:"منتهي", hiatus:"متوقف مؤقتاً", cancelled:"ملغى" };
+
+let currentTab = 0;
+let currentPage = 0;
+let currentQuery = "";
+let results = [];
+let library = {};
+let filterStatus = "all";
+
+// --- Storage ---
+function saveLibrary() {
+  localStorage.setItem("webtoon-library", JSON.stringify(library));
+}
+function loadLibrary() {
+  try { library = JSON.parse(localStorage.getItem("webtoon-library") || "{}"); }
+  catch { library = {}; }
+}
+
+// --- API ---
+async function fetchManhwa(query, page) {
+  const offset = page * 18;
+  const titleParam = query ? `&title=${encodeURIComponent(query)}` : "";
+  const url = `https://api.mangadex.org/manga?limit=18&offset=${offset}${titleParam}&originalLanguage[]=ko&availableTranslatedLanguage[]=en&includes[]=cover_art&order[followedCount]=desc&contentRating[]=safe&contentRating[]=suggestive`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.data || [];
+}
+
+function getCoverUrl(manga) {
+  const rel = (manga.relationships||[]).find(r => r.type === "cover_art");
+  if (!rel?.attributes?.fileName) return null;
+  return `https://uploads.mangadex.org/covers/${manga.id}/${rel.attributes.fileName}.256.jpg`;
+}
+
+function getMangaTitle(manga) {
+  const t = manga.attributes?.title || {};
+  return t.en || t["ja-ro"] || Object.values(t)[0] || "بدون عنوان";
+}
+
+function getMangaDesc(manga) {
+  const d = manga.attributes?.description || {};
+  return d.en || Object.values(d)[0] || "";
+}
+
+// --- UI Helpers ---
+function showToast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+function makeBadge(status) {
+  const cfg = STATUS_CONFIG[status];
+  if (!cfg) return "";
+  return `<span class="status-badge" style="color:${cfg.color};background:${cfg.color}22;border-color:${cfg.color}44">${cfg.icon} ${cfg.label}</span>`;
+}
+
+function makeSelectOptions(current) {
+  let html = `<option value="">+ أضف للمكتبة</option>`;
+  for (const [k,v] of Object.entries(STATUS_CONFIG)) {
+    html += `<option value="${k}" ${current===k?"selected":""}>${v.icon} ${v.label}</option>`;
+  }
+  if (current) html += `<option value="__remove__">🗑️ إزالة</option>`;
+  return html;
+}
+
+// --- Render Discover ---
+async function renderDiscover() {
+  document.getElementById("mangaGrid").innerHTML = "";
+  document.getElementById("loadingMsg").style.display = "block";
+  document.getElementById("emptyMsg").style.display = "none";
+  document.getElementById("pagination").style.display = "none";
+
+  try {
+    results = await fetchManhwa(currentQuery, currentPage);
+  } catch(e) {
+    results = [];
+  }
+
+  document.getElementById("loadingMsg").style.display = "none";
+
+  // Search info
+  const infoEl = document.getElementById("searchInfo");
+  if (currentQuery) {
+    infoEl.style.display = "block";
+    infoEl.innerHTML = `نتائج البحث عن: <strong>"${currentQuery}"</strong> <button class="clear-btn" onclick="clearSearch()">✕ مسح</button>`;
+  } else {
+    infoEl.style.display = "none";
+  }
+
+  if (!results.length) {
+    document.getElementById("emptyMsg").style.display = "block";
+    return;
+  }
+
+  const grid = document.getElementById("mangaGrid");
+  results.forEach(manga => {
+    const cover = getCoverUrl(manga);
+    const title = getMangaTitle(manga);
+    const desc = getMangaDesc(manga);
+    const pubStatus = PUB_STATUS[manga.attributes?.status] || "";
+    const entry = library[manga.id];
+
+    const card = document.createElement("div");
+    card.className = "manga-card";
+    card.innerHTML = `
+      <div class="card-cover">
+        ${cover
+          ? `<img src="${cover}" alt="${title}" onerror="this.parentNode.innerHTML='<div class=\\'card-cover-placeholder\\'>📚</div>'" />`
+          : `<div class="card-cover-placeholder">📚</div>`}
+        ${pubStatus ? `<div class="pub-status-badge">${pubStatus}</div>` : ""}
+        ${entry ? `<div class="lib-status-badge">${makeBadge(entry.status)}</div>` : ""}
+      </div>
+      <div class="card-info">
+        <div class="card-title">${title}</div>
+        ${desc ? `<div class="card-desc">${desc}</div>` : ""}
+        <select class="status-select" data-id="${manga.id}" onchange="handleCardStatus(this, '${manga.id}')">
+          ${makeSelectOptions(entry?.status)}
+        </select>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Pagination
+  const pag = document.getElementById("pagination");
+  pag.style.display = "flex";
+  document.getElementById("prevBtn").disabled = currentPage === 0;
+  document.getElementById("pageLabel").textContent = `صفحة ${currentPage + 1}`;
+}
+
+function handleCardStatus(select, mangaId) {
+  const val = select.value;
+  const manga = results.find(m => m.id === mangaId);
+  if (!manga) return;
+
+  if (val === "__remove__" || val === "") {
+    delete library[mangaId];
+    saveLibrary();
+    updateLibCount();
+    renderDiscover();
+    showToast("تم الإزالة من المكتبة");
+    return;
+  }
+  library[mangaId] = {
+    status: val,
+    title: getMangaTitle(manga),
+    cover: getCoverUrl(manga),
+    updatedAt: Date.now()
+  };
+  saveLibrary();
+  updateLibCount();
+  renderDiscover();
+  showToast(`تمت الإضافة كـ "${STATUS_CONFIG[val].label}"`);
+}
+
+// --- Render Library ---
+function renderLibrary() {
+  const ids = Object.keys(library);
+
+  // Stats
+  const stats = {};
+  ids.forEach(id => {
+    const s = library[id]?.status;
+    if (s) stats[s] = (stats[s] || 0) + 1;
+  });
+
+  const statsEl = document.getElementById("statsRow");
+  statsEl.innerHTML = "";
+  for (const [k,v] of Object.entries(STATUS_CONFIG)) {
+    if (!stats[k]) continue;
+    const d = document.createElement("div");
+    d.className = "stat-card";
+    d.style.background = v.color + "15";
+    d.style.borderColor = v.color + "33";
+    d.innerHTML = `<span style="font-size:16px">${v.icon}</span><div><div class="stat-num" style="color:${v.color}">${stats[k]}</div><div class="stat-label">${v.label}</div></div>`;
+    statsEl.appendChild(d);
+  }
+
+  // Filters
+  const filterEl = document.getElementById("filterRow");
+  filterEl.innerHTML = "";
+  const allBtn = document.createElement("button");
+  allBtn.className = "filter-btn" + (filterStatus==="all"?" active":"");
+  allBtn.textContent = `الكل (${ids.length})`;
+  if (filterStatus==="all") allBtn.style.background = "#7c3aed", allBtn.style.color="#fff";
+  allBtn.onclick = () => { filterStatus="all"; renderLibrary(); };
+  filterEl.appendChild(allBtn);
+
+  for (const [k,v] of Object.entries(STATUS_CONFIG)) {
+    if (!stats[k]) continue;
+    const btn = document.createElement("button");
+    btn.className = "filter-btn" + (filterStatus===k?" active":"");
+    btn.textContent = `${v.icon} ${v.label} (${stats[k]})`;
+    if (filterStatus===k) btn.style.background=v.color, btn.style.color="#fff", btn.style.borderColor=v.color;
+    btn.onclick = () => { filterStatus=k; renderLibrary(); };
+    filterEl.appendChild(btn);
+  }
+
+  // List
+  const filtered = ids.filter(id => filterStatus==="all" || library[id]?.status===filterStatus);
+  const listEl = document.getElementById("libList");
+  listEl.innerHTML = "";
+
+  if (!filtered.length) {
+    document.getElementById("libEmpty").style.display = "block";
+    return;
+  }
+  document.getElementById("libEmpty").style.display = "none";
+
+  filtered.forEach(id => {
+    const entry = library[id];
+    const div = document.createElement("div");
+    div.className = "lib-item";
+    div.innerHTML = `
+      <div class="lib-thumb">
+        ${entry.cover ? `<img src="${entry.cover}" alt="${entry.title}" onerror="this.parentNode.innerHTML='📚'" />` : "📚"}
+      </div>
+      <div class="lib-info">
+        <div class="lib-title">${entry.title}</div>
+        <div style="margin-top:4px">${makeBadge(entry.status)}</div>
+      </div>
+      <select class="lib-select" onchange="handleLibStatus(this,'${id}')">
+        ${Object.entries(STATUS_CONFIG).map(([k,v]) =>
+          `<option value="${k}" ${entry.status===k?"selected":""}>${v.icon} ${v.label}</option>`
+        ).join("")}
+        <option value="__remove__">🗑️ إزالة</option>
+      </select>
+    `;
+    listEl.appendChild(div);
+  });
+}
+
+function handleLibStatus(select, id) {
+  const val = select.value;
+  if (val === "__remove__") {
+    delete library[id];
+    saveLibrary();
+    updateLibCount();
+    renderLibrary();
+    showToast("تم الإزالة من المكتبة");
+    return;
+  }
+  library[id].status = val;
+  saveLibrary();
+  updateLibCount();
+  renderLibrary();
+  showToast(`تم التحديث إلى "${STATUS_CONFIG[val].label}"`);
+}
+
+// --- Tab Switching ---
+function switchTab(i) {
+  currentTab = i;
+  document.getElementById("tab0").className = "tab-btn" + (i===0?" active":"");
+  document.getElementById("tab1").className = "tab-btn" + (i===1?" active":"");
+  document.getElementById("discoverPanel").style.display = i===0 ? "block" : "none";
+  document.getElementById("libraryPanel").style.display  = i===1 ? "block" : "none";
+  document.getElementById("searchRow").style.display = i===0 ? "flex" : "none";
+  if (i===1) renderLibrary();
+}
+
+function updateLibCount() {
+  const cnt = Object.keys(library).length;
+  const el = document.getElementById("libCount");
+  el.textContent = cnt;
+  el.style.display = cnt > 0 ? "inline" : "none";
+}
+
+// --- Search ---
+function doSearch() {
+  currentQuery = document.getElementById("searchInput").value.trim();
+  currentPage = 0;
+  renderDiscover();
+}
+
+function clearSearch() {
+  currentQuery = "";
+  document.getElementById("searchInput").value = "";
+  currentPage = 0;
+  renderDiscover();
+}
+
+function changePage(dir) {
+  currentPage = Math.max(0, currentPage + dir);
+  renderDiscover();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+document.getElementById("searchInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") doSearch();
+});
+
+// --- Init ---
+loadLibrary();
+updateLibCount();
+renderDiscover();
+</script>
+</body>
+</html>
